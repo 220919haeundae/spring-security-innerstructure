@@ -1,0 +1,744 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Spring Security 내부구조 학습(3)</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+    margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.highlight-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.highlight-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.highlight-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.highlight-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.highlight-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.highlight-default_background {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.highlight-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.highlight-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.highlight-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.highlight-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.highlight-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.highlight-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.highlight-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.highlight-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.block-color-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.block-color-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.block-color-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.block-color-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.block-color-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.block-color-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.block-color-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.block-color-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.block-color-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.block-color-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.block-color-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.select-value-color-uiBlue { background-color: rgba(35, 131, 226, .07); }
+.select-value-color-pink { background-color: rgba(245, 224, 233, 1); }
+.select-value-color-purple { background-color: rgba(232, 222, 238, 1); }
+.select-value-color-green { background-color: rgba(219, 237, 219, 1); }
+.select-value-color-gray { background-color: rgba(227, 226, 224, 1); }
+.select-value-color-transparentGray { background-color: rgba(227, 226, 224, 0); }
+.select-value-color-translucentGray { background-color: rgba(0, 0, 0, 0.06); }
+.select-value-color-orange { background-color: rgba(250, 222, 201, 1); }
+.select-value-color-brown { background-color: rgba(238, 224, 218, 1); }
+.select-value-color-red { background-color: rgba(255, 226, 221, 1); }
+.select-value-color-yellow { background-color: rgba(253, 236, 200, 1); }
+.select-value-color-blue { background-color: rgba(211, 229, 239, 1); }
+.select-value-color-pageGlass { background-color: undefined; }
+.select-value-color-washGlass { background-color: undefined; }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="1536d82a-d721-80c8-9da4-fcd14a2e3cae" class="page sans"><header><h1 class="page-title">Spring Security 내부구조 학습(3)</h1><p class="page-description"></p></header><div class="page-body"><p id="1536d82a-d721-8027-9e6b-c933942f4787" class="">
+</p><details open=""><summary style="font-weight:600;font-size:1.5em;line-height:1.3;margin:0">SecurityContextHolder 내부 동작</summary><div class="indented"><ul id="1536d82a-d721-8025-9f97-e7c1579c21f1" class="bulleted-list"><li style="list-style-type:disc">SecurityFilterChain에서 유저의 정보를 확인하고 인증/인가 작업을 하기 위해서는 유저의 정보를 security 관련 bean과 공유해야 하는데, 이 때 유저 정보의 공유를 위해 SecurityContextHolder가 내부의 SecurityContext 에 Authentication이라는 객체를 만들어 그 안에 Principal, Credentials, Authorities라는 세 개의 정보를 저장한다.</li></ul><ul id="1536d82a-d721-80b1-a504-f329b95ef95b" class="bulleted-list"><li style="list-style-type:disc">Authentication 객체<ul id="1536d82a-d721-80b1-b23d-dad2d23fe52a" class="bulleted-list"><li style="list-style-type:circle">Principal: 유저에 대한 정보</li></ul><ul id="1536d82a-d721-8041-8951-f7e8746f1e93" class="bulleted-list"><li style="list-style-type:circle">Credentials: 증명(비밀번호, 토큰)</li></ul><ul id="1536d82a-d721-806a-b0a7-e1a716717619" class="bulleted-list"><li style="list-style-type:circle">Authorites: 유저의 권한(Role) 목록</li></ul></li></ul><ul id="1536d82a-d721-80e7-8483-cd7c3ff143ec" class="bulleted-list"><li style="list-style-type:disc">Authentication 객체는 SecurityContext에 포함되어 관리되며 SecurityContext는 0개 이상 존재할 수 있다. 그리고 이 N개의 SecurityContext는 하나의 SecurityContextHolder에 의해서 관리된다.</li></ul><ul id="1536d82a-d721-80c1-9989-f07291a268e7" class="bulleted-list"><li style="list-style-type:disc">접근<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1536d82a-d721-806f-8669-fbb7d8569401" class="code"><code class="language-Java">SecurityContextHoler.getContext().getAuthentication().getAuthorities();</code></pre></li></ul><p id="1536d82a-d721-805e-a89f-e3e5df204b20" class="">SecurityContextHolder의 메서드는 static으로 선언되기 때문에 어디서든 접근할 수 있다.</p><p id="1536d82a-d721-8027-b67e-f2c186ec3cc2" class="">
+</p><ul id="1536d82a-d721-8006-bc6b-f5926ce7e567" class="bulleted-list"><li style="list-style-type:disc">SecurityContextHolder</li></ul><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1536d82a-d721-80e3-a2c5-f039aec9b274" class="code"><code class="language-Java">public class SecurityContextHolder {
+
+}</code></pre></div></details><p id="1536d82a-d721-8009-86c4-cf1fc2ffeba2" class="">
+</p><details open=""><summary style="font-weight:600;font-size:1.5em;line-height:1.3;margin:0">SecurityContextHolderStrategy</summary><div class="indented"><ul id="1536d82a-d721-8029-ac18-e0ae2b70566a" class="bulleted-list"><li style="list-style-type:disc">다수의 사용자가 접속하는 멀티 쓰레드 환경에서 Authentication 객체 내부의 인증 정보가 타 사용자와 중복되는 것을 방지하기 위해 각각의 사용자에게 SecurityContextHolder를 할당하는데, 이 때 SecurityContextHolder를 부여하는 방법은 SecurityContextHolderStrategy Interface에 위임한다.</li></ul><ul id="1536d82a-d721-8086-9371-de02f8988292" class="bulleted-list"><li style="list-style-type:disc">즉, SecurityContextHolder는 SecurityContext들을 관리하는 메서드를 제공하지만 실제로 등록, 초기화, 읽기 같은 작업은 SecurityContextHolderStrategy Interface를 활용한다.</li></ul></div></details><p id="1536d82a-d721-80da-a8a3-dd9f5aa176c8" class=""><div class="indented"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1536d82a-d721-8027-a198-f26de87b899b" class="code"><code class="language-Java">public class SecurityContextHolder {
+    public static final String MODE_THREADLOCAL = &quot;MODE_THREADLOCAL&quot;;
+    public static final String MODE_INHERITABLETHREADLOCAL = &quot;MODE_INHERITABLETHREADLOCAL&quot;;
+    public static final String MODE_GLOBAL = &quot;MODE_GLOBAL&quot;;
+    private static final String MODE_PRE_INITIALIZED = &quot;MODE_PRE_INITIALIZED&quot;;
+    public static final String SYSTEM_PROPERTY = &quot;spring.security.strategy&quot;;
+    private static String strategyName = System.getProperty(&quot;spring.security.strategy&quot;);
+    private static SecurityContextHolderStrategy strategy;
+    private static int initializeCount = 0;
+
+    public SecurityContextHolder() {
+    }
+
+    private static void initialize() {
+        initializeStrategy();
+        ++initializeCount;
+    }
+
+    private static void initializeStrategy() {
+        if (&quot;MODE_PRE_INITIALIZED&quot;.equals(strategyName)) {
+            Assert.state(strategy != null, &quot;When using MODE_PRE_INITIALIZED, setContextHolderStrategy must be called with the fully constructed strategy&quot;);
+        } else {
+            if (!StringUtils.hasText(strategyName)) {
+                strategyName = &quot;MODE_THREADLOCAL&quot;;
+            }
+
+            if (strategyName.equals(&quot;MODE_THREADLOCAL&quot;)) {
+                strategy = new ThreadLocalSecurityContextHolderStrategy();
+            } else if (strategyName.equals(&quot;MODE_INHERITABLETHREADLOCAL&quot;)) {
+                strategy = new InheritableThreadLocalSecurityContextHolderStrategy();
+            } else if (strategyName.equals(&quot;MODE_GLOBAL&quot;)) {
+                strategy = new GlobalSecurityContextHolderStrategy();
+            } else {
+                try {
+                    Class&lt;?&gt; clazz = Class.forName(strategyName);
+                    Constructor&lt;?&gt; customStrategy = clazz.getConstructor();
+                    strategy = (SecurityContextHolderStrategy)customStrategy.newInstance();
+                } catch (Exception var2) {
+                    Exception ex = var2;
+                    ReflectionUtils.handleReflectionException(ex);
+                }
+
+            }
+        }
+    }
+
+    ...
+    
+    static {
+        initialize();
+    }
+}
+</code></pre><ul id="1536d82a-d721-8045-97d7-dec8381fb189" class="bulleted-list"><li style="list-style-type:disc">SecurityContextHolderStrategy는 기본 설정으로 ThreadLocalSecurityContextHolderStrategy 객체를 사용해서 ContextHolder를 생성하고 부여한다.</li></ul><ul id="1536d82a-d721-8078-899b-d4e9039d2a7e" class="bulleted-list"><li style="list-style-type:disc">접근 쓰레드별 SecurityContext 배분<ul id="1536d82a-d721-80c2-9f9c-d51e66ebf2c2" class="bulleted-list"><li style="list-style-type:circle">톰캣 WAS는 멀티 쓰레드 방식으로 동작한다. 유저가 접속하면 유저에게 하나의 쓰레드를 할당한다. 각각의 유저는 동시에 시큐리티 로그인 로직을 사용할 수 있다.</li></ul><ul id="1536d82a-d721-8096-88fe-c3a2569ae440" class="bulleted-list"><li style="list-style-type:circle">이 때 SecurityContextHolder의 필드 선언된 SecurityContext를 호출하게 된다면 쓰레드간 공유하는 메모리의 code 영역에 데이터가 있기 때문에 정보가 덮어지는  현상이 발생한다고 생각할 수 있는데, threadLocal로 관리되기 때문에 쓰레드별 다른 구획을 나눠 제공한다.</li></ul></li></ul><ul id="1536d82a-d721-800b-8658-cc79c93fdf06" class="bulleted-list"><li style="list-style-type:disc">SecurityContext의 생명주기<ul id="1536d82a-d721-80f0-8020-c6463bf2fc54" class="bulleted-list"><li style="list-style-type:circle">Authentication 객체를 관리하는 SecurityContext는 사용자의 요청이 서버로 들어오면 생성되고 처리가 끝난 후 응답되는 순간에 초기화된다.</li></ul></li></ul></div></p><p id="1536d82a-d721-800c-ad1e-e83fef00931b" class="">
+</p><details open=""><summary style="font-weight:600;font-size:1.5em;line-height:1.3;margin:0">요약</summary><div class="indented"><ul id="1536d82a-d721-8077-9615-e04d6ebf0628" class="bulleted-list"><li style="list-style-type:disc">SecurityFilterChain의 각각의 필터에서 수행한 작업 내용이 전달되기 위해 요청(유저) 별로 Authentication 객체를 할당하여 확인함</li></ul><ul id="1536d82a-d721-8094-95a5-f6b24fa59d13" class="bulleted-list"><li style="list-style-type:disc">Authentication 객체는 SecurityContextHolder의 SecurityContext가 관리함</li></ul><ul id="1536d82a-d721-80c7-a62f-cc17789fa36a" class="bulleted-list"><li style="list-style-type:disc">멀티 쓰레드 환경에서 SecurityContext를 만들고 필드의 static 영역에 선언된 SecurityContext를 다루는 전략은 기본적으로 threadLocal(ThreadLocalSecurityContextHolderStrategy) 전략을 이용함.</li></ul><p id="1536d82a-d721-8074-ab48-c3cfe2f15ad5" class="">
+</p></div></details><hr id="1536d82a-d721-80c0-be45-f736ad9effb4"/><h2 id="1536d82a-d721-8010-b856-e342a7c30076" class="">Security Context 어디에서 사용하는가?</h2><ul id="1536d82a-d721-80bb-80ad-f7dcb57eed7a" class="bulleted-list"><li style="list-style-type:disc">로그아웃 필터 : 로그아웃 로직을 수행하면서 SecurityContext의 Authentication 객체를 비움으로써 인가 필터에서 Authentication이 null값이므로 인증/인가 절차에서 반려됨</li></ul><ul id="1536d82a-d721-80fc-b5ba-ec69f0e40102" class="bulleted-list"><li style="list-style-type:disc">로그인 필터 : 인증을 완료한 뒤 유저 정보를 담은 Authentication 객체를 넣음</li></ul><p id="1536d82a-d721-80f0-a085-c9f2efdbe9cc" class="">
+</p><hr id="1536d82a-d721-807c-b4ad-f321f811122b"/><h2 id="1536d82a-d721-80e3-bb49-c4b0d499d9b9" class="">추가</h2><ul id="1536d82a-d721-8062-8e15-d60bdc5c3a39" class="bulleted-list"><li style="list-style-type:disc">SecurityContextHolder는 왜 Bean이 아닌 static으로 등록하는지?<ul id="1536d82a-d721-8009-8979-cf767afce8fd" class="bulleted-list"><li style="list-style-type:circle">→ Util 클래스의 경우 static으로 선언하는게 암묵적인 룰</li></ul></li></ul><ul id="1536d82a-d721-80c4-a5da-d86d42d3e541" class="bulleted-list"><li style="list-style-type:disc">스레드 safe한 함수의 local 변수 대신 왜 필드 변수를 사용하고 threadLocal을 사용하는지?<ul id="1536d82a-d721-8052-bd56-d4c47704d5a4" class="bulleted-list"><li style="list-style-type:circle">→ 쓰레드 단위로 기억을 하는 경우 필드 변수를 사용함</li></ul></li></ul></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

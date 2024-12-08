@@ -5,16 +5,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class MainController {
 
-    @GetMapping("/user")
-    public String userPage() {
-        return "user page";
+    @GetMapping("/testfilterbefore1")
+    public String before1() {
+
+        return "forward:/testfilterafter";
     }
 
-    @GetMapping("/admin")
-    public String adminPage() {
-        return "admin page";
+    @GetMapping("/testfilterbefore2")
+    public String before2() {
+
+        return "redirect:/testfilterafter";
+    }
+
+    @GetMapping("/testfilterafter")
+    @ResponseBody
+    public String after() {
+
+        return "hihihi";
     }
 }

@@ -1,0 +1,759 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Spring Security 내부구조 학습(12)</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+    margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.highlight-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.highlight-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.highlight-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.highlight-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.highlight-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.highlight-default_background {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.highlight-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.highlight-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.highlight-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.highlight-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.highlight-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.highlight-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.highlight-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.highlight-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.block-color-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.block-color-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.block-color-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.block-color-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.block-color-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.block-color-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.block-color-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.block-color-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.block-color-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.block-color-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.block-color-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.select-value-color-uiBlue { background-color: rgba(35, 131, 226, .07); }
+.select-value-color-pink { background-color: rgba(245, 224, 233, 1); }
+.select-value-color-purple { background-color: rgba(232, 222, 238, 1); }
+.select-value-color-green { background-color: rgba(219, 237, 219, 1); }
+.select-value-color-gray { background-color: rgba(227, 226, 224, 1); }
+.select-value-color-transparentGray { background-color: rgba(227, 226, 224, 0); }
+.select-value-color-translucentGray { background-color: rgba(0, 0, 0, 0.06); }
+.select-value-color-orange { background-color: rgba(250, 222, 201, 1); }
+.select-value-color-brown { background-color: rgba(238, 224, 218, 1); }
+.select-value-color-red { background-color: rgba(255, 226, 221, 1); }
+.select-value-color-yellow { background-color: rgba(253, 236, 200, 1); }
+.select-value-color-blue { background-color: rgba(211, 229, 239, 1); }
+.select-value-color-pageGlass { background-color: undefined; }
+.select-value-color-washGlass { background-color: undefined; }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="1576d82a-d721-809b-96fa-cfeb78b5b513" class="page sans"><header><h1 class="page-title">Spring Security 내부구조 학습(12)</h1><p class="page-description"></p></header><div class="page-body"><p id="1576d82a-d721-8051-9c6a-fea40bc99a33" class="">
+</p><h2 id="1576d82a-d721-80b1-8fcc-fea99b2f0b8e" class="">UsernamePasswordAuthenticationFilter 목적</h2><p id="1576d82a-d721-805c-bfb7-c5fa8832e962" class="">
+</p><p id="1576d82a-d721-8078-b683-c128f181434a" class="">이 필터는 DefaultSecurityFilterChain에 기본적으로 등록되는 필터로 여덟 번째에 위치한다.</p><p id="1576d82a-d721-807d-b682-e3b51a6f9eda" class="">
+</p><p id="1576d82a-d721-80d6-878c-d85f88267880" class="">이 필터가 등록되는 목적은 POST : “/login” 경로에서 Form 기반 인증을 진행할 수 있도록 multipart/form-data 형태의 username/password 데이터를 받아 인증 클래스에게 값을 넘겨주는 역할을 수행한다.</p><p id="1576d82a-d721-80cb-ae06-ebec5a4746ce" class="">
+</p><p id="1576d82a-d721-807b-b769-f39345fae2c9" class="">커스텀 SecurityFilterChain을 생성하면 자동 등록이 안되기 때문에 아래 구문을 통해서 필터를 활성화시켜야 한다.</p><p id="1576d82a-d721-80bb-a1fb-eea79d631764" class="">
+</p><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-8033-b936-fd68f37325b9" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">http
+        .formLogin(Customizer.withDefaults());</code></pre><hr id="1576d82a-d721-8025-9595-c2db9c900b4d"/><h2 id="1576d82a-d721-803d-8ad3-cefab9d49d76" class="">UsernamePaswordAuthenticationFilter 클래스</h2><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-803c-a960-f2f008df5300" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">public class UsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+
+}</code></pre><ul id="1576d82a-d721-80a4-93f5-d73273473641" class="bulleted-list"><li style="list-style-type:disc"><strong>doFilter가 없다 doFilter는?</strong><p id="1576d82a-d721-8020-bd80-c8a267354c53" class="">앞서 봐왔던 필터들과 다르게 doFilter 메소드가 보이지 않는다 어디 있을까? 바로 부모 클래스인 AbstractAuthenticationProcessingFilter 클래스에 존재한다.</p><p id="1576d82a-d721-80e3-9e57-e5f14946a2ea" class="">
+</p></li></ul><ul id="1576d82a-d721-80be-a8ba-c8894d7802d0" class="bulleted-list"><li style="list-style-type:disc"><strong>왜?</strong><p id="1576d82a-d721-80d5-8f14-f6f576446c68" class="">UsernamePasswordAuthenticationFilter는 Form 로그인 방식에 대한 필터이다. Form 데이터를 받은 후 인증 과정은 어떻게 될까?</p><p id="1576d82a-d721-80b8-81bc-cb26a39acd8c" class="">
+</p></li></ul><ul id="1576d82a-d721-808d-8698-fe1c3ea548d9" class="bulleted-list"><li style="list-style-type:disc"><strong>과정</strong><p id="1576d82a-d721-8078-9319-ec344dc139f4" class="">사용자에게 데이터를 받아 인증 → 인증 결과 → 성공/실패 핸들</p><p id="1576d82a-d721-803b-ba71-d083c76eed3f" class="">
+</p></li></ul><ul id="1576d82a-d721-8008-a174-d32b774c7723" class="bulleted-list"><li style="list-style-type:disc"><strong>사용자가 보낸 데이터 방식이 다르다고해서 위 과정이 변할까?</strong><p id="1576d82a-d721-8001-abac-eb1faf404381" class="">username/password를 Form, JSON 방식으로 보낸다고해서 위 과정이 변할까? 아니다. 따라서 위 과정에 대한 추상 클래스인 AbstractAuthenticationProcessingFilter를 정의하고 각각의 방식에 따라 필터를 구현해서 사용한다.</p><p id="1576d82a-d721-8076-97bf-e1170dceaab8" class="">
+</p></li></ul><ul id="1576d82a-d721-8062-9dba-ef470ab14b5b" class="bulleted-list"><li style="list-style-type:disc"><strong>즉 모식화 시키면</strong></li></ul><figure id="1576d82a-d721-8055-9a05-fa3b2ff63a32" class="image"><a href="image-aa3a8947-ab5c-4e41-b8d6-08bbd1eb1b22.jpg"><img style="width:707.9791870117188px" src="image-aa3a8947-ab5c-4e41-b8d6-08bbd1eb1b22.jpg"/></a></figure><hr id="1576d82a-d721-80d0-9c30-f4bbdcd3ff41"/><h2 id="1576d82a-d721-8006-912d-c14bffece14d" class="">AbstractAuthenticationProcessingFilter</h2><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-8050-8503-f1d2ef4cea2e" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">public abstract class AbstractAuthenticationProcessingFilter extends GenericFilterBean
+		implements ApplicationEventPublisherAware, MessageSourceAware {
+
+}</code></pre><ul id="1576d82a-d721-803c-9e63-d53811a2fdf1" class="bulleted-list"><li style="list-style-type:disc"><strong>doFilter : 주요 로직</strong></li></ul><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-80e2-95f6-d6c79f4a0a89" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+		throws IOException, ServletException {
+
+// 로그인 경로 요청인지 확인
+if (!requiresAuthentication(request, response)) {
+		chain.doFilter(request, response);
+		return;
+	}
+
+// 로그인 과정 시도
+try {
+// 사용자로 부터 데이터를 받아 상황에 맞는 인증을 진행 (이 부분을 구현)
+Authentication authenticationResult = attemptAuthentication(request, response);
+
+		if (authenticationResult == null) {
+			return;
+		}
+// 인증 결과가 존재하면 세션 전략에 따라 SecurityContext에 저장
+this.sessionStrategy.onAuthentication(authenticationResult, request, response);
+
+// 아래 값이 설정되어 있으면 다음 필터로 넘김
+if (this.continueChainBeforeSuccessfulAuthentication) {
+			chain.doFilter(request, response);
+		}
+
+// 로그인 성공 핸들러
+		successfulAuthentication(request, response, chain, authenticationResult);
+	}
+// 로그인 실패 핸들러
+catch (InternalAuthenticationServiceException failed) {
+		this.logger.error(&quot;An internal error occurred while trying to authenticate the user.&quot;, failed);
+		unsuccessfulAuthentication(request, response, failed);
+	}
+	catch (AuthenticationException ex) {
+		unsuccessfulAuthentication(request, response, ex);
+	}
+}</code></pre><ul id="1576d82a-d721-8042-8ef1-fc514daa37c8" class="bulleted-list"><li style="list-style-type:disc"><strong>attemptAuthentication 추상 메소드</strong></li></ul><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-80d2-bbbb-cc0e2423a2a1" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">public abstract Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+		throws AuthenticationException, IOException, ServletException;JAVA</code></pre><p id="1576d82a-d721-80b0-9a3e-eae7d4f18d43" class="">위와 같이 데이터를 받아 인증을 진행하는 부분을 추상화하여 상황에 따라 구현할 수 있도록 만들어 두었다.</p><ul id="1576d82a-d721-80da-af78-ff3d583a1aee" class="bulleted-list"><li style="list-style-type:disc"><strong>AbstractAuthenticationProcessingFilter 추상 클래스</strong><ul id="1576d82a-d721-804e-8352-c5002f5a61a3" class="bulleted-list"><li style="list-style-type:circle">UsernamePasswordAuthenticationFilter</li></ul><ul id="1576d82a-d721-8098-a027-fa817743e8ae" class="bulleted-list"><li style="list-style-type:circle">OAuth2LoginAuthenticationFilter</li></ul><ul id="1576d82a-d721-80aa-beb8-e86f54dbea1e" class="bulleted-list"><li style="list-style-type:circle">Saml2WebSsoAuthenticationFilter</li></ul><ul id="1576d82a-d721-8038-82ab-cac1efeb0dc0" class="bulleted-list"><li style="list-style-type:circle">CasAuthenticationFilter</li></ul></li></ul><hr id="1576d82a-d721-805f-9784-e1c4797171ed"/><h2 id="1576d82a-d721-80b7-887f-c4b5b5d1817f" class="">UsernamePasswordAuthenticationFilter에서 attempAuthentication() 메소드</h2><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="1576d82a-d721-80a1-b97f-edb18a905181" class="code"><code class="language-Java" style="white-space:pre-wrap;word-break:break-all">@Override
+public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+		throws AuthenticationException {
+
+// 로그인 경로 요청인지 확인
+if (this.postOnly &amp;&amp; !request.getMethod().equals(&quot;POST&quot;)) {
+		throw new AuthenticationServiceException(&quot;Authentication method not supported: &quot; + request.getMethod());
+	}
+
+// 요청으로부터 multipart/form-data로 전송되는 username, password 획득
+String username = obtainUsername(request);
+	username = (username != null) ? username.trim() : &quot;&quot;;
+	String password = obtainPassword(request);
+	password = (password != null) ? password : &quot;&quot;;
+
+// 인증을 위해 위 데이터를 인증 토큰에 넣음
+UsernamePasswordAuthenticationToken authRequest = UsernamePasswordAuthenticationToken.unauthenticated(username,
+			password);
+// Allow subclasses to set the &quot;details&quot; property
+	setDetails(request, authRequest);
+
+// username/password 기반 인증을 진행하는 AuthenticationManager에게 인증을 요청 후 응답
+return this.getAuthenticationManager().authenticate(authRequest);
+}</code></pre><hr id="1576d82a-d721-80f3-bb6a-e0df00d8ea12"/><h2 id="1576d82a-d721-800d-8ca8-ea022248002a" class="">로그인이 수행되는 과정</h2><p id="1576d82a-d721-809c-8038-dab30c6cd0e1" class="">위 attemptAuthentication 메소드에서 유저가 보낸 정보를 받아 AuthenticationManager에게 넘기는데 해당 클래스들은 어떻게 구성되어 있고 어떤 과정을 거쳐서 로그인이 수행될까?</p><p id="1576d82a-d721-802e-9091-f2c2efe92d38" class="">username/password 기반으로 국한되어 살펴보면 아래와 같다.</p><figure id="1576d82a-d721-804b-b4c8-f49917ff68a2" class="image"><a href="image-baf331b1-0b88-4fa3-b29d-a823b69fb02d.jpg"><img style="width:707.9791870117188px" src="image-baf331b1-0b88-4fa3-b29d-a823b69fb02d.jpg"/></a></figure><hr id="1576d82a-d721-80e5-982e-cf50a61f647f"/><h2 id="1576d82a-d721-8072-bc81-e98b7aff3b10" class="">기타</h2><ul id="1576d82a-d721-8063-933a-d028a1725120" class="bulleted-list"><li style="list-style-type:disc"><strong>AuthenticationManager 인터페이스</strong></li></ul><p id="1576d82a-d721-803e-91b5-d7508070c5b0" class=""><a href="https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/authentication/AuthenticationManager.html">AuthenticationManager 스프링 시큐리티 공식 API 문서</a></p><ul id="1576d82a-d721-80fc-ba46-e885dee9ad64" class="bulleted-list"><li style="list-style-type:disc"><strong>ProviderManager 구현</strong></li></ul><p id="1576d82a-d721-803e-86dd-cfd59e6e74aa" class=""><a href="https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/authentication/ProviderManager.html">ProviderManager 스프링 시큐리티 공식 API 문서</a></p><ul id="1576d82a-d721-8082-985b-e75d41f86e87" class="bulleted-list"><li style="list-style-type:disc"><strong>AuthenticationProvider 인터페이스</strong></li></ul><p id="1576d82a-d721-80db-b379-cca171b1f37c" class=""><a href="https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/authentication/AuthenticationProvider.html">AuthenticationProvider 스프링 시큐리티 공식 API 문서</a></p><ul id="1576d82a-d721-8093-9179-f16741267666" class="bulleted-list"><li style="list-style-type:disc"><strong>DaoAuthenticationProvider 구현</strong></li></ul><p id="1576d82a-d721-80d6-8531-cc83995314ec" class=""><a href="https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/authentication/dao/DaoAuthenticationProvider.html">DaoAuthenticationProvider 스프링 시큐리티 공식 API 문서</a></p></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>
